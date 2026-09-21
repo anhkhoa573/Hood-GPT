@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for, s
 import os
 import sqlite3
 import hashlib
+import time
 from datetime import datetime, timedelta
 from functools import wraps
 from google import genai
@@ -14,19 +15,24 @@ DB_PATH = "hood.db"
 
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "PASTE_KEY_CUA_BAN_VAO_DAY")
 
+# Danh sách model fallback - thử lần lượt nếu model trước lỗi
+MODEL_FALLBACKS = [
+    "gemini-3.6-flash",
+    "gemini-flash-latest",
+    "gemini-2.5-flash",
+    "gemini-2.0-flash-exp",
+]
+
 MODE_CONFIG = {
     "basic": {
-        "model": "gemini-3.6-flash",
         "system": "Ban la tro ly AI than thien. Tra loi ngan gon, de hieu.",
         "max_tokens": 1000
     },
     "pro": {
-        "model": "gemini-3.6-flash",
         "system": "Ban la chuyen gia AI. Tra loi chi tiet, co phan tich, vi du cu the.",
         "max_tokens": 2000
     },
     "max": {
-        "model": "gemini-3.6-flash",
         "system": "Ban la AI thong minh nhat. Suy luan sau, tra loi day du moi goc do.",
         "max_tokens": 4000
     }
@@ -52,6 +58,41 @@ def login_required(f):
             return redirect(url_for("login"))
         return f(*a, **kw)
     return deco
+
+
+def call_gemini(prompt, system, max_tokens, temperature):
+    """Goi Gemini voi co che fallback nhieu model."""
+    client = genai.Client(api_key=GEMINI_API_KEY)
+    last_error = "Khong the ket noi AI."
+
+    for model_name in MODEL_FALLBACKS:
+        for attempt in range(2):
+            try:
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=prompt,
+                    config={
+                        "system_instruction": system,
+                        "max_output_tokens": max_tokens,
+                        "temperature": temperature
+                    }
+                )
+                if response.text:
+                    return True, response.text
+                else:
+                    last_error = "AI khong tra loi."
+            except Exception as e:
+                err_str = str(e)
+                last_error = err_str
+                # Neu loi 503 (qua tai) -> thu model khac
+                if "503" in err_str or "UNAVAILABLE" in err_str:
+                    break
+                # Neu loi khac -> thu lai 1 lan
+                if attempt == 0:
+                    time.sleep(1)
+                    continue
+                break
+    return False, last_error
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -156,22 +197,21 @@ def api_chat():
 
         full_prompt = history_text + "User: " + msg + chr(10) + "Assistant:"
 
-        client = genai.Client(api_key=GEMINI_API_KEY)
+        temperature = 0.9 if mode == "max" else 0.7
+        ok, result = call_gemini(full_prompt, cfg["system"], cfg["max_tokens"], temperature)
 
-        response = client.models.generate_content(
-            model=cfg["model"],
-            contents=full_prompt,
-            config={
-                "system_instruction": cfg["system"],
-                "max_output_tokens": cfg["max_tokens"],
-                "temperature": 0.9 if mode == "max" else 0.7
-            }
-        )
+        if not ok:
+            # Don dep thong bao loi cho than thien
+            if "503" in result or "UNAVAILABLE" in result:
+                return jsonify({"ok": False, "error": "AI dang qua tai. Vui long thu lai sau 10 giay."})
+            elif "API_KEY" in result or "401" in result or "403" in result:
+                return jsonify({"ok": False, "error": "Key API khong hop le hoac het han."})
+            elif "quota" in result.lower() or "429" in result:
+                return jsonify({"ok": False, "error": "Het luot mien phi hom nay. Thu lai ngay mai."})
+            else:
+                return jsonify({"ok": False, "error": "Loi AI: " + result[:200]})
 
-        reply = response.text if response.text else ""
-
-        if not reply:
-            return jsonify({"ok": False, "error": "AI khong tra loi. Thu lai."})
+        reply = result
 
         conn = sqlite3.connect(DB_PATH)
         conn.execute("INSERT INTO chats (user_id, role, content, created_at) VALUES (?, 'assistant', ?, ?)",
@@ -183,7 +223,7 @@ def api_chat():
         return jsonify({"ok": True, "reply": reply, "mode": mode})
 
     except Exception as e:
-        return jsonify({"ok": False, "error": "Loi: " + str(e)})
+        return jsonify({"ok": False, "error": "Loi he thong: " + str(e)[:200]})
 
 
 @app.route("/api/history")
