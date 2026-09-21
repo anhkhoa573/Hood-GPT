@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hood GPT - Dang Nhap</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Rajdhani,sans-serif;background:radial-gradient(circle at 30% 20%,#1a1a2e,#05050a 70%);color:#e8e8ff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;overflow-x:hidden}
+.particle{position:fixed;width:3px;height:3px;background:#00e5ff;border-radius:50%;pointer-events:none;opacity:.5;box-shadow:0 0 10px #00e5ff;animation:float linear infinite}
+@keyframes float{0%{transform:translateY(100vh);opacity:0}10%{opacity:.5}90%{opacity:.5}100%{transform:translateY(-10vh);opacity:0}}
+.container{max-width:420px;width:100%;background:linear-gradient(145deg,rgba(22,22,42,.95),rgba(15,15,26,.98));border:1px solid #252545;border-radius:24px;padding:40px 30px;box-shadow:0 30px 80px rgba(0,0,0,.7);position:relative;overflow:hidden;animation:cardIn .6s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes cardIn{from{opacity:0;transform:translateY(30px) scale(.95)}to{opacity:1;transform:translateY(0) scale(1)}}
+.container::before{content:'';position:absolute;top:-2px;left:-2px;right:-2px;bottom:-2px;background:linear-gradient(45deg,#00e5ff,#a855f7,#ff2d95,#00e5ff);background-size:400% 400%;border-radius:24px;z-index:-1;opacity:.4;animation:borderGlow 8s ease infinite;filter:blur(8px)}
+@keyframes borderGlow{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+.logo{text-align:center;margin-bottom:30px}
+.logo-icon{font-size:3.5rem;margin-bottom:10px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+h1{font-family:Orbitron;font-size:1.8rem;background:linear-gradient(90deg,#00e5ff,#a855f7,#ff2d95);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:shine 3s linear infinite;letter-spacing:2px}
+@keyframes shine{to{background-position:200% center}}
+.sub{color:#6b6b8a;font-size:.85rem;margin-top:6px;letter-spacing:1px}
+.tabs{display:flex;gap:8px;margin-bottom:25px;background:#0a0a15;padding:5px;border-radius:12px}
+.tab{flex:1;padding:12px;text-align:center;border-radius:8px;cursor:pointer;font-weight:700;font-size:.9rem;transition:all .3s;color:#6b6b8a;user-select:none}
+.tab.active{background:linear-gradient(135deg,#00e5ff,#a855f7);color:#fff;box-shadow:0 5px 20px rgba(0,229,255,.3)}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:.75rem;color:#6b6b8a;margin-bottom:6px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase}
+.field input{width:100%;padding:14px 16px;background:#0d0d14;border:1px solid #252545;border-radius:12px;color:#e8e8ff;font-family:Rajdhani;font-size:.95rem;outline:none;transition:all .3s}
+.field input:focus{border-color:#00e5ff;box-shadow:0 0 0 3px rgba(0,229,255,.1)}
+.btn{width:100%;padding:15px;border:none;border-radius:12px;font-family:Rajdhani;font-size:1rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;background:linear-gradient(135deg,#00e5ff,#a855f7);color:#fff;box-shadow:0 10px 30px rgba(0,229,255,.3);transition:all .25s;margin-top:10px}
+.btn:hover{transform:translateY(-3px);box-shadow:0 15px 40px rgba(0,229,255,.5)}
+.btn:disabled{opacity:.6;cursor:not-allowed}
+.msg{padding:12px 16px;border-radius:10px;font-size:.85rem;margin-top:15px;display:none}
+.msg.ok{background:rgba(0,255,136,.1);color:#00ff88;border:1px solid rgba(0,255,136,.3);display:block}
+.msg.err{background:rgba(255,51,85,.1);color:#ff5577;border:1px solid rgba(255,51,85,.3);display:block}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="logo">
+<div class="logo-icon">&#129302;</div>
+<h1>HOOD GPT</h1>
+<p class="sub">AI thong minh - Mien phi</p>
+</div>
+<div class="tabs">
+<div class="tab active" id="tabLogin" onclick="switchTab('login')">Dang Nhap</div>
+<div class="tab" id="tabReg" onclick="switchTab('register')">Dang Ky</div>
+</div>
+<div class="field">
+<label>Ten dang nhap</label>
+<input type="text" id="username" placeholder="Nhap ten...">
+</div>
+<div class="field">
+<label>Mat khau</label>
+<input type="password" id="password" placeholder="Nhap mat khau...">
+</div>
+<button class="btn" id="btnSubmit" onclick="submitForm()">Dang Nhap</button>
+<div class="msg" id="msg"></div>
+</div>
+<script>
+(function(){for(var i=0;i<25;i++){var p=document.createElement("div");p.className="particle";p.style.left=Math.random()*100+"%";p.style.animationDuration=(5+Math.random()*10)+"s";p.style.animationDelay=Math.random()*5+"s";if(Math.random()>0.5){p.style.background="#a855f7";p.style.boxShadow="0 0 10px #a855f7"}document.body.appendChild(p)}})();
+var mode = "login";
+function switchTab(m){
+    mode = m;
+    document.getElementById("tabLogin").classList.toggle("active", m === "login");
+    document.getElementById("tabReg").classList.toggle("active", m === "register");
+    document.getElementById("btnSubmit").textContent = m === "login" ? "Dang Nhap" : "Dang Ky";
+    document.getElementById("msg").className = "msg";
+}
+async function submitForm(){
+    var u = document.getElementById("username").value.trim();
+    var p = document.getElementById("password").value;
+    var msg = document.getElementById("msg");
+    var btn = document.getElementById("btnSubmit");
+    if(!u || !p){ msg.className = "msg err"; msg.textContent = "Nhap day du thong tin!"; return; }
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Dang xu ly...';
+    try{
+        var res = await fetch("/login", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            credentials: "same-origin",
+            body: JSON.stringify({username: u, password: p, action: mode})
+        });
+        var data = await res.json();
+        if(data.ok){
+            msg.className = "msg ok"; msg.textContent = data.message;
+            setTimeout(function(){ window.location.href = "/"; }, 700);
+        } else {
+            msg.className = "msg err"; msg.textContent = data.error;
+            btn.disabled = false; btn.textContent = mode === "login" ? "Dang Nhap" : "Dang Ky";
+        }
+    } catch(e){
+        msg.className = "msg err"; msg.textContent = "Loi ket noi: " + e.message;
+        btn.disabled = false; btn.textContent = mode === "login" ? "Dang Nhap" : "Dang Ky";
+    }
+}
+document.getElementById("password").addEventListener("keypress", function(e){ if(e.key === "Enter") submitForm(); });
+</script>
+</body>
+</html>
