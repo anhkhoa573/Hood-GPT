@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Hood GPT</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -24,9 +24,13 @@ font-family:'Outfit',sans-serif;
 background:var(--bg);
 color:var(--text);
 }
-body{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+body{
+display:flex;
+flex-direction:column;
+height:100dvh;
+overflow:hidden;
+}
 
-/* ============ TOPBAR ============ */
 .topbar{
 background:rgba(18,18,26,.9);
 backdrop-filter:blur(20px);
@@ -36,12 +40,9 @@ display:flex;
 align-items:center;
 justify-content:space-between;
 z-index:10;
+flex-shrink:0;
 }
-.brand{
-display:flex;
-align-items:center;
-gap:10px;
-}
+.brand{display:flex;align-items:center;gap:10px}
 .brand-mark{
 width:36px;height:36px;
 border-radius:10px;
@@ -57,17 +58,9 @@ font-weight:800;
 background:linear-gradient(135deg,var(--cyan),var(--purple));
 -webkit-background-clip:text;
 -webkit-text-fill-color:transparent;
-letter-spacing:-.3px;
 }
-.user-area{
-display:flex;
-align-items:center;
-gap:12px;
-}
-.user-name{
-font-size:.85rem;
-color:var(--muted);
-}
+.user-area{display:flex;align-items:center;gap:12px}
+.user-name{font-size:.85rem;color:var(--muted)}
 .user-name b{color:var(--cyan);font-weight:600}
 .logout{
 padding:7px 14px;
@@ -84,7 +77,6 @@ transition:all .2s;
 }
 .logout:hover{background:rgba(239,68,68,.2)}
 
-/* ============ MODE BAR ============ */
 .mode-bar{
 background:rgba(18,18,26,.6);
 backdrop-filter:blur(20px);
@@ -93,6 +85,7 @@ padding:10px 20px;
 display:flex;
 gap:8px;
 justify-content:center;
+flex-shrink:0;
 }
 .mode-btn{
 padding:8px 20px;
@@ -114,7 +107,6 @@ border-color:transparent;
 box-shadow:0 5px 20px rgba(0,212,255,.25);
 }
 
-/* ============ CHAT ============ */
 .chat{
 flex:1;
 overflow-y:auto;
@@ -122,15 +114,13 @@ padding:24px 20px;
 display:flex;
 flex-direction:column;
 gap:16px;
-scroll-behavior:smooth;
+-webkit-overflow-scrolling:touch;
 }
 .chat::-webkit-scrollbar{width:6px}
-.chat::-webkit-scrollbar-track{background:transparent}
 .chat::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:10px}
-.chat::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.2)}
 
 .msg{
-max-width:75%;
+max-width:80%;
 padding:14px 18px;
 border-radius:18px;
 line-height:1.65;
@@ -139,10 +129,7 @@ animation:fadeUp .3s ease;
 word-wrap:break-word;
 white-space:pre-wrap;
 }
-@keyframes fadeUp{
-from{opacity:0;transform:translateY(10px)}
-to{opacity:1;transform:translateY(0)}
-}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 .msg.user{
 align-self:flex-end;
 background:linear-gradient(135deg,var(--cyan),var(--purple));
@@ -157,34 +144,20 @@ border:1px solid var(--border);
 color:var(--text);
 border-bottom-left-radius:6px;
 }
-.msg.ai::before{
-content:'AI';
-display:inline-block;
-font-size:.65rem;
-font-weight:800;
-color:var(--cyan);
-margin-right:8px;
-letter-spacing:1px;
-vertical-align:middle;
-}
-.msg.user::before{
-content:'Bạn';
-display:inline-block;
-font-size:.65rem;
-font-weight:800;
-color:rgba(255,255,255,.7);
-margin-right:8px;
-letter-spacing:1px;
-vertical-align:middle;
+.msg code{
+background:rgba(0,0,0,.5);
+padding:2px 7px;
+border-radius:5px;
+font-family:'Consolas','Monaco',monospace;
+color:var(--green);
+font-size:.85em;
 }
 
 .welcome{
 text-align:center;
 color:var(--muted);
 padding:60px 20px;
-animation:enter .5s ease;
 }
-@keyframes enter{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}
 .welcome-icon{
 width:80px;height:80px;
 margin:0 auto 20px;
@@ -196,30 +169,14 @@ align-items:center;
 justify-content:center;
 font-size:2.5rem;
 }
-.welcome h2{
-font-size:1.5rem;
-font-weight:700;
-color:var(--text);
-margin-bottom:10px;
-}
+.welcome h2{font-size:1.5rem;font-weight:700;color:var(--text);margin-bottom:10px}
 .welcome h2 span{
 background:linear-gradient(135deg,var(--cyan),var(--purple));
 -webkit-background-clip:text;
 -webkit-text-fill-color:transparent;
 }
-.welcome p{
-font-size:.9rem;
-line-height:1.6;
-max-width:400px;
-margin:0 auto;
-}
-.hints{
-display:flex;
-gap:8px;
-flex-wrap:wrap;
-justify-content:center;
-margin-top:24px;
-}
+.welcome p{font-size:.9rem;line-height:1.6;max-width:400px;margin:0 auto}
+.hints{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:24px}
 .hint{
 padding:8px 14px;
 background:rgba(0,0,0,.3);
@@ -230,18 +187,15 @@ color:var(--muted);
 cursor:pointer;
 transition:all .2s;
 }
-.hint:hover{
-border-color:rgba(0,212,255,.4);
-color:var(--cyan);
-transform:translateY(-1px);
-}
+.hint:hover{border-color:rgba(0,212,255,.4);color:var(--cyan);transform:translateY(-1px)}
 
-/* ============ INPUT ============ */
 .input-area{
-background:rgba(18,18,26,.9);
+background:rgba(18,18,26,.95);
 backdrop-filter:blur(20px);
 border-top:1px solid var(--border);
-padding:16px 20px;
+padding:12px 16px;
+padding-bottom:calc(12px + env(safe-area-inset-bottom));
+flex-shrink:0;
 }
 .input-wrap{
 max-width:900px;
@@ -252,17 +206,17 @@ align-items:flex-end;
 }
 .input-wrap textarea{
 flex:1;
-padding:14px 18px;
+padding:13px 16px;
 background:rgba(0,0,0,.4);
 border:1px solid var(--border);
 border-radius:16px;
 color:var(--text);
 font-family:'Outfit',sans-serif;
-font-size:.95rem;
+font-size:16px;
 outline:none;
 resize:none;
-max-height:150px;
-min-height:52px;
+max-height:120px;
+min-height:48px;
 line-height:1.5;
 transition:all .25s;
 }
@@ -273,12 +227,12 @@ box-shadow:0 0 0 3px rgba(0,212,255,.08);
 }
 .input-wrap textarea::placeholder{color:#4a4a5a}
 .send-btn{
-width:52px;height:52px;
+width:48px;height:48px;
 border:none;
-border-radius:16px;
+border-radius:14px;
 background:linear-gradient(135deg,var(--cyan),var(--purple));
 color:#fff;
-font-size:1.3rem;
+font-size:1.2rem;
 cursor:pointer;
 transition:all .25s;
 display:flex;
@@ -287,19 +241,10 @@ justify-content:center;
 flex-shrink:0;
 box-shadow:0 5px 20px rgba(0,212,255,.2);
 }
-.send-btn:hover:not(:disabled){
-transform:translateY(-2px);
-box-shadow:0 10px 30px rgba(0,212,255,.4);
-}
+.send-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 10px 30px rgba(0,212,255,.4)}
 .send-btn:disabled{opacity:.5;cursor:not-allowed}
 
-/* ============ TYPING ============ */
-.typing{
-display:inline-flex;
-gap:4px;
-align-items:center;
-padding:4px 0;
-}
+.typing{display:inline-flex;gap:4px;align-items:center;padding:4px 0}
 .typing span{
 width:7px;height:7px;
 background:var(--cyan);
@@ -313,17 +258,16 @@ animation:typingBounce 1.4s infinite;
 30%{transform:translateY(-8px);opacity:1}
 }
 
-/* ============ CLEAR BTN ============ */
 .clear-btn{
 position:fixed;
 top:64px;
-right:20px;
-padding:7px 14px;
+right:16px;
+padding:6px 12px;
 background:rgba(239,68,68,.1);
 border:1px solid rgba(239,68,68,.2);
 color:#f87171;
 border-radius:8px;
-font-size:.75rem;
+font-size:.72rem;
 cursor:pointer;
 font-family:'Outfit',sans-serif;
 font-weight:600;
@@ -331,16 +275,6 @@ transition:all .2s;
 z-index:20;
 }
 .clear-btn:hover{background:rgba(239,68,68,.25)}
-
-/* ============ CODE BLOCK ============ */
-.msg code{
-background:rgba(0,0,0,.5);
-padding:2px 7px;
-border-radius:5px;
-font-family:'Consolas','Monaco',monospace;
-color:var(--green);
-font-size:.85em;
-}
 </style>
 </head>
 <body>
@@ -353,8 +287,8 @@ font-size:.85em;
 <div class="brand-name">Hood GPT</div>
 </div>
 <div class="user-area">
-<div class="user-name">Chào, <b>{{ username }}</b></div>
-<a href="/logout" class="logout">Đăng xuất</a>
+<div class="user-name">Ch?o, <b>{{ username }}</b></div>
+<a href="/logout" class="logout">??ng xu?t</a>
 </div>
 </div>
 
@@ -364,24 +298,24 @@ font-size:.85em;
 <div class="mode-btn" data-mode="max" onclick="setMode('max')">Max</div>
 </div>
 
-<button class="clear-btn" onclick="clearChat()">Xóa chat</button>
+<button class="clear-btn" onclick="clearChat()">X?a chat</button>
 
 <div class="chat" id="chat">
 <div class="welcome">
 <div class="welcome-icon">&#129302;</div>
-<h2>Chào mừng đến <span>Hood GPT</span></h2>
-<p>Chọn chế độ phù hợp và bắt đầu trò chuyện. AI sẽ trả lời theo phong cách bạn chọn.</p>
+<h2>Ch?o m?ng ??n <span>Hood GPT</span></h2>
+<p>Ch?n ch? ?? ph? h?p v? b?t ??u tr? chuy?n. AI s? tr? l?i theo phong c?ch b?n ch?n.</p>
 <div class="hints">
-<div class="hint" onclick="fillHint('Giải thích AI là gì?')">AI là gì?</div>
-<div class="hint" onclick="fillHint('Viết code Python tính giai thừa')">Code Python</div>
-<div class="hint" onclick="fillHint('Dịch sang tiếng Anh: Xin chào')">Dịch thuật</div>
+<div class="hint" onclick="fillHint('Gi?i th?ch AI l? g??')">AI l? g??</div>
+<div class="hint" onclick="fillHint('Vi?t code Python t?nh giai th?a')">Code Python</div>
+<div class="hint" onclick="fillHint('D?ch sang ti?ng Anh: Xin ch?o')">D?ch thu?t</div>
 </div>
 </div>
 </div>
 
 <div class="input-area">
 <div class="input-wrap">
-<textarea id="inputBox" placeholder="Nhập tin nhắn..." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+<textarea id="inputBox" placeholder="Nh?p tin nh?n..." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
 <button class="send-btn" id="sendBtn" onclick="sendMessage()">&#10148;</button>
 </div>
 </div>
@@ -418,7 +352,7 @@ function fillHint(text){
 
 function autoResize(el){
     el.style.height = "auto";
-    el.style.height = Math.min(el.scrollHeight, 150) + "px";
+    el.style.height = Math.min(el.scrollHeight, 120) + "px";
 }
 
 function handleKey(e){
@@ -472,11 +406,11 @@ async function sendMessage(){
         if(data.ok){
             appendMsg("ai", data.reply);
         } else {
-            appendMsg("ai", "Lỗi: " + data.error);
+            appendMsg("ai", "L?i: " + data.error);
         }
     } catch(e){
         typingDiv.remove();
-        appendMsg("ai", "Lỗi kết nối: " + e.message);
+        appendMsg("ai", "L?i k?t n?i: " + e.message);
     } finally {
         sending = false;
         btn.disabled = false;
@@ -485,9 +419,9 @@ async function sendMessage(){
 }
 
 async function clearChat(){
-    if(!confirm("Xóa toàn bộ lịch sử chat?")) return;
+    if(!confirm("X?a to?n b? l?ch s? chat?")) return;
     await fetch("/api/clear", {method: "POST", credentials: "same-origin"});
-    document.getElementById("chat").innerHTML = '<div class="welcome"><div class="welcome-icon">&#129302;</div><h2>Đã xóa</h2><p>Bắt đầu cuộc trò chuyện mới.</p></div>';
+    document.getElementById("chat").innerHTML = '<div class="welcome"><div class="welcome-icon">&#129302;</div><h2>?? x?a</h2><p>B?t ??u cu?c tr? chuy?n m?i.</p></div>';
 }
 </script>
 </body>
