@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hood GPT</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--cyan:#00e5ff;--purple:#a855f7;--pink:#ff2d95;--green:#00ff88;--bg1:#05050a;--border:#252545;--text:#e8e8ff;--muted:#6b6b8a;--input-bg:#0d0d14}
+html,body{height:100%;font-family:Rajdhani,sans-serif;background:var(--bg1);color:var(--text)}
+body{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+.bg-anim{position:fixed;inset:0;z-index:-1;background:radial-gradient(circle at 20% 20%,rgba(0,229,255,.1),transparent 40%),radial-gradient(circle at 80% 80%,rgba(168,85,247,.1),transparent 40%),var(--bg1)}
+.bg-anim::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(0,229,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.03) 1px,transparent 1px);background-size:50px 50px;animation:gridMove 20s linear infinite}
+@keyframes gridMove{to{transform:translate(50px,50px)}}
+.topbar{background:rgba(15,15,26,.95);border-bottom:1px solid var(--border);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;backdrop-filter:blur(10px);z-index:10}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-icon{font-size:1.6rem}
+.brand-name{font-family:Orbitron;font-size:1.1rem;font-weight:900;background:linear-gradient(90deg,#00e5ff,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:1.5px}
+.user-area{display:flex;align-items:center;gap:12px}
+.user-name{font-size:.85rem;color:var(--muted)}
+.user-name b{color:var(--cyan)}
+.logout{padding:8px 14px;background:rgba(255,51,85,.15);border:1px solid rgba(255,51,85,.3);color:#ff5577;border-radius:8px;font-family:Rajdhani;font-weight:700;font-size:.75rem;letter-spacing:1px;cursor:pointer;text-decoration:none;transition:all .25s}
+.logout:hover{background:rgba(255,51,85,.3)}
+.mode-bar{background:rgba(15,15,26,.7);border-bottom:1px solid var(--border);padding:10px 18px;display:flex;gap:8px;justify-content:center}
+.mode-btn{padding:8px 18px;border-radius:10px;background:var(--input-bg);border:1px solid var(--border);color:var(--muted);font-family:Rajdhani;font-weight:700;font-size:.8rem;letter-spacing:1px;cursor:pointer;transition:all .25s;text-transform:uppercase}
+.mode-btn:hover{border-color:var(--cyan)}
+.mode-btn.active{background:linear-gradient(135deg,var(--cyan),var(--purple));color:#fff;border-color:transparent;box-shadow:0 5px 20px rgba(0,229,255,.3)}
+.chat{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px}
+.chat::-webkit-scrollbar{width:6px}
+.chat::-webkit-scrollbar-thumb{background:var(--border);border-radius:10px}
+.msg{max-width:80%;padding:14px 18px;border-radius:16px;line-height:1.6;font-size:.95rem;animation:fadeUp .3s ease;word-wrap:break-word;white-space:pre-wrap}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.msg.user{align-self:flex-end;background:linear-gradient(135deg,var(--cyan),var(--purple));color:#fff;border-bottom-right-radius:4px}
+.msg.ai{align-self:flex-start;background:var(--input-bg);border:1px solid var(--border);color:var(--text);border-bottom-left-radius:4px}
+.welcome{text-align:center;color:var(--muted);padding:40px 20px}
+.welcome h2{font-family:Orbitron;color:var(--cyan);font-size:1.4rem;margin-bottom:10px}
+.welcome p{font-size:.9rem;line-height:1.6}
+.input-area{background:rgba(15,15,26,.95);border-top:1px solid var(--border);padding:15px 18px;backdrop-filter:blur(10px)}
+.input-wrap{max-width:900px;margin:0 auto;display:flex;gap:10px;align-items:flex-end}
+.input-wrap textarea{flex:1;padding:14px 18px;background:var(--input-bg);border:1px solid var(--border);border-radius:16px;color:var(--text);font-family:Rajdhani;font-size:.95rem;outline:none;resize:none;max-height:150px;min-height:50px;line-height:1.5;transition:all .3s}
+.input-wrap textarea:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,229,255,.1)}
+.send-btn{width:50px;height:50px;border:none;border-radius:14px;background:linear-gradient(135deg,var(--cyan),var(--purple));color:#fff;font-size:1.3rem;cursor:pointer;transition:all .25s;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.send-btn:hover{transform:scale(1.05);box-shadow:0 10px 25px rgba(0,229,255,.4)}
+.send-btn:disabled{opacity:.5;cursor:not-allowed}
+.typing{display:inline-block}
+.typing span{display:inline-block;width:6px;height:6px;background:var(--cyan);border-radius:50%;margin:0 2px;animation:typingBounce 1.4s infinite}
+.typing span:nth-child(2){animation-delay:.2s}
+.typing span:nth-child(3){animation-delay:.4s}
+@keyframes typingBounce{0%,60%,100%{transform:translateY(0);opacity:.5}30%{transform:translateY(-8px);opacity:1}}
+.clear-btn{position:absolute;top:70px;right:18px;padding:6px 12px;background:rgba(255,51,85,.1);border:1px solid rgba(255,51,85,.3);color:#ff5577;border-radius:8px;font-size:.7rem;cursor:pointer;font-family:Rajdhani;font-weight:700;letter-spacing:1px;transition:all .25s;z-index:20}
+.clear-btn:hover{background:rgba(255,51,85,.25)}
+</style>
+</head>
+<body>
+<div class="bg-anim"></div>
+<div class="topbar">
+<div class="brand">
+<div class="brand-icon">&#129302;</div>
+<div class="brand-name">HOOD GPT</div>
+</div>
+<div class="user-area">
+<div class="user-name">Xin chao, <b>{{ username }}</b></div>
+<a href="/logout" class="logout">DANG XUAT</a>
+</div>
+</div>
+
+<div class="mode-bar">
+<div class="mode-btn active" data-mode="basic" onclick="setMode('basic')">Basic</div>
+<div class="mode-btn" data-mode="pro" onclick="setMode('pro')">Pro</div>
+<div class="mode-btn" data-mode="max" onclick="setMode('max')">Max</div>
+</div>
+
+<button class="clear-btn" onclick="clearChat()">XOA CHAT</button>
+
+<div class="chat" id="chat">
+<div class="welcome">
+<h2>CHAO MUNG DEN HOOD GPT</h2>
+<p>Chon che do: <b>Basic</b> (nhanh), <b>Pro</b> (chi tiet), <b>Max</b> (suy luan sau)<br>Bat dau tro chuyen bang cach nhap tin nhan ben duoi.</p>
+</div>
+</div>
+
+<div class="input-area">
+<div class="input-wrap">
+<textarea id="inputBox" placeholder="Nhap tin nhan..." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+<button class="send-btn" id="sendBtn" onclick="sendMessage()">&#10148;</button>
+</div>
+</div>
+
+<script>
+var mode = "basic";
+var sending = false;
+
+(function loadHistory(){
+    fetch("/api/history", {credentials: "same-origin"})
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+            if(d.ok && d.history.length > 0){
+                document.getElementById("chat").innerHTML = "";
+                d.history.forEach(function(m){
+                    appendMsg(m.role === "user" ? "user" : "ai", m.content);
+                });
+            }
+        });
+})();
+
+function setMode(m){
+    mode = m;
+    document.querySelectorAll(".mode-btn").forEach(function(b){
+        b.classList.toggle("active", b.dataset.mode === m);
+    });
+}
+
+function autoResize(el){
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, 150) + "px";
+}
+
+function handleKey(e){
+    if(e.key === "Enter" && !e.shiftKey){
+        e.preventDefault();
+        sendMessage();
+    }
+}
+
+function appendMsg(type, text){
+    var chat = document.getElementById("chat");
+    var w = chat.querySelector(".welcome");
+    if(w) w.remove();
+    var div = document.createElement("div");
+    div.className = "msg " + type;
+    div.textContent = text;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+    return div;
+}
+
+async function sendMessage(){
+    if(sending) return;
+    var input = document.getElementById("inputBox");
+    var msg = input.value.trim();
+    if(!msg) return;
+
+    sending = true;
+    var btn = document.getElementById("sendBtn");
+    btn.disabled = true;
+
+    appendMsg("user", msg);
+    input.value = "";
+    input.style.height = "auto";
+
+    var typingDiv = document.createElement("div");
+    typingDiv.className = "msg ai";
+    typingDiv.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+    document.getElementById("chat").appendChild(typingDiv);
+    document.getElementById("chat").scrollTop = document.getElementById("chat").scrollHeight;
+
+    try{
+        var res = await fetch("/api/chat", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            credentials: "same-origin",
+            body: JSON.stringify({message: msg, mode: mode})
+        });
+        var data = await res.json();
+        typingDiv.remove();
+        if(data.ok){
+            appendMsg("ai", data.reply);
+        } else {
+            appendMsg("ai", "Loi: " + data.error);
+        }
+    } catch(e){
+        typingDiv.remove();
+        appendMsg("ai", "Loi ket noi: " + e.message);
+    } finally {
+        sending = false;
+        btn.disabled = false;
+        input.focus();
+    }
+}
+
+async function clearChat(){
+    if(!confirm("Xoa toan bo lich su chat?")) return;
+    await fetch("/api/clear", {method: "POST", credentials: "same-origin"});
+    document.getElementById("chat").innerHTML = '<div class="welcome"><h2>DA XOA</h2><p>Bat dau cuoc tro chuyen moi.</p></div>';
+}
+</script>
+</body>
+</html>
