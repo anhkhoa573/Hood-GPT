@@ -12,24 +12,22 @@ app.permanent_session_lifetime = timedelta(days=7)
 
 DB_PATH = "hood.db"
 
-# Đọc key từ biến môi trường
-# Trên Render: đặt GEMINI_API_KEY trong Environment Variables
-# Trên máy local: thay key trực tiếp vào đây
+# Đọc key từ biến môi trường (đã cấu hình trên Render)
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "PASTE_KEY_CUA_BAN_VAO_DAY")
 
 MODE_CONFIG = {
     "basic": {
-        "model": "gemini-2.0-flash",
+        "model": "gemini-3.6-flash",
         "system": "Ban la tro ly AI than thien. Tra loi ngan gon, de hieu.",
         "max_tokens": 1000
     },
     "pro": {
-        "model": "gemini-2.0-flash",
+        "model": "gemini-3.6-flash",
         "system": "Ban la chuyen gia AI. Tra loi chi tiet, co phan tich, vi du cu the.",
         "max_tokens": 3000
     },
     "max": {
-        "model": "gemini-2.0-flash",
+        "model": "gemini-3.6-flash",
         "system": "Ban la AI thong minh nhat. Suy luan sau, tra loi day du moi goc do, co the chia nhieu buoc.",
         "max_tokens": 8000
     }
