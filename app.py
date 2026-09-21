@@ -12,7 +12,6 @@ app.permanent_session_lifetime = timedelta(days=7)
 
 DB_PATH = "hood.db"
 
-# Đọc key từ biến môi trường (đã cấu hình trên Render)
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "PASTE_KEY_CUA_BAN_VAO_DAY")
 
 MODE_CONFIG = {
@@ -24,12 +23,12 @@ MODE_CONFIG = {
     "pro": {
         "model": "gemini-3.6-flash",
         "system": "Ban la chuyen gia AI. Tra loi chi tiet, co phan tich, vi du cu the.",
-        "max_tokens": 3000
+        "max_tokens": 2000
     },
     "max": {
         "model": "gemini-3.6-flash",
-        "system": "Ban la AI thong minh nhat. Suy luan sau, tra loi day du moi goc do, co the chia nhieu buoc.",
-        "max_tokens": 8000
+        "system": "Ban la AI thong minh nhat. Suy luan sau, tra loi day du moi goc do.",
+        "max_tokens": 4000
     }
 }
 
@@ -121,42 +120,42 @@ def index():
 @app.route("/api/chat", methods=["POST"])
 @login_required
 def api_chat():
-    d = request.get_json()
-    msg = d.get("message", "").strip()
-    mode = d.get("mode", "basic")
-
-    if not msg:
-        return jsonify({"ok": False, "error": "Nhap tin nhan!"})
-    if mode not in MODE_CONFIG:
-        mode = "basic"
-
-    uid = session["user_id"]
-    cfg = MODE_CONFIG[mode]
-
-    init_db()
-    conn = sqlite3.connect(DB_PATH)
-    conn.execute("INSERT INTO chats (user_id, role, content, created_at) VALUES (?, 'user', ?, ?)",
-                 (uid, msg, datetime.utcnow().isoformat()))
-    conn.commit()
-
-    rows = conn.execute(
-        "SELECT role, content FROM chats WHERE user_id = ? ORDER BY id DESC LIMIT 10",
-        (uid,)
-    ).fetchall()
-    conn.close()
-
-    history = list(reversed(rows))
-
-    history_text = ""
-    for role, content in history[:-1]:
-        if role == "user":
-            history_text += "User: " + content + chr(10)
-        else:
-            history_text += "Assistant: " + content + chr(10)
-
-    full_prompt = history_text + "User: " + msg + chr(10) + "Assistant:"
-
     try:
+        d = request.get_json()
+        msg = d.get("message", "").strip()
+        mode = d.get("mode", "basic")
+
+        if not msg:
+            return jsonify({"ok": False, "error": "Nhap tin nhan!"})
+        if mode not in MODE_CONFIG:
+            mode = "basic"
+
+        uid = session["user_id"]
+        cfg = MODE_CONFIG[mode]
+
+        init_db()
+        conn = sqlite3.connect(DB_PATH)
+        conn.execute("INSERT INTO chats (user_id, role, content, created_at) VALUES (?, 'user', ?, ?)",
+                     (uid, msg, datetime.utcnow().isoformat()))
+        conn.commit()
+
+        rows = conn.execute(
+            "SELECT role, content FROM chats WHERE user_id = ? ORDER BY id DESC LIMIT 6",
+            (uid,)
+        ).fetchall()
+        conn.close()
+
+        history = list(reversed(rows))
+
+        history_text = ""
+        for role, content in history[:-1]:
+            if role == "user":
+                history_text += "User: " + content + chr(10)
+            else:
+                history_text += "Assistant: " + content + chr(10)
+
+        full_prompt = history_text + "User: " + msg + chr(10) + "Assistant:"
+
         client = genai.Client(api_key=GEMINI_API_KEY)
 
         response = client.models.generate_content(
@@ -169,7 +168,10 @@ def api_chat():
             }
         )
 
-        reply = response.text
+        reply = response.text if response.text else ""
+
+        if not reply:
+            return jsonify({"ok": False, "error": "AI khong tra loi. Thu lai."})
 
         conn = sqlite3.connect(DB_PATH)
         conn.execute("INSERT INTO chats (user_id, role, content, created_at) VALUES (?, 'assistant', ?, ?)",
@@ -192,7 +194,7 @@ def api_history():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     rows = conn.execute(
-        "SELECT role, content, created_at FROM chats WHERE user_id = ? ORDER BY id ASC LIMIT 50",
+        "SELECT role, content, created_at FROM chats WHERE user_id = ? ORDER BY id ASC LIMIT 30",
         (uid,)
     ).fetchall()
     conn.close()
