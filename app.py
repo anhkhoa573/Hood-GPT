@@ -2,10 +2,9 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for, s
 import os
 import sqlite3
 import hashlib
-import time
 from datetime import datetime, timedelta
 from functools import wraps
-from google import genai
+import requests
 
 app = Flask(__name__)
 app.secret_key = "hood-gpt-secret-key-2026"
@@ -13,14 +12,13 @@ app.permanent_session_lifetime = timedelta(days=7)
 
 DB_PATH = "hood.db"
 
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "PASTE_KEY_CUA_BAN_VAO_DAY")
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "PASTE_GROQ_KEY_VAO_DAY")
+GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
-# Danh sách model fallback - thử lần lượt nếu model trước lỗi
 MODEL_FALLBACKS = [
-    "gemini-3.6-flash",
-    "gemini-flash-latest",
-    "gemini-2.5-flash",
-    "gemini-2.0-flash-exp",
+    "llama-3.3-70b-versatile",
+    "llama-3.1-8b-instant",
+    "mixtral-8x7b-32768",
 ]
 
 MODE_CONFIG = {
@@ -41,7 +39,7 @@ MODE_CONFIG = {
 
 def init_db():
     conn = sqlite3.connect(DB_PATH)
-    conn.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE NOT NULL, password_hash TEXT NOT NULL, mode TEXT DEFAULT 'basic', created_at TEXT NOT NULL, msg_count INTEGER DEFAULT 0)")
+    conn.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE NOT NULL, password_hash TEXT NOT NULL, created_at TEXT NOT NULL)")
     conn.execute("CREATE TABLE IF NOT EXISTS chats (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, role TEXT NOT NULL, content TEXT NOT NULL, created_at TEXT NOT NULL)")
     conn.commit()
     conn.close()
@@ -60,38 +58,32 @@ def login_required(f):
     return deco
 
 
-def call_gemini(prompt, system, max_tokens, temperature):
-    """Goi Gemini voi co che fallback nhieu model."""
-    client = genai.Client(api_key=GEMINI_API_KEY)
+def call_groq(messages, system, max_tokens, temperature):
     last_error = "Khong the ket noi AI."
+    for model in MODEL_FALLBACKS:
+        try:
+            payload = {
+                "model": model,
+                "messages": [{"role": "system", "content": system}] + messages,
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+            }
+            headers = {
+                "Authorization": "Bearer " + GROQ_API_KEY,
+                "Content-Type": "application/json",
+            }
+            r = requests.post(GROQ_URL, json=payload, headers=headers, timeout=60)
+            data = r.json()
 
-    for model_name in MODEL_FALLBACKS:
-        for attempt in range(2):
-            try:
-                response = client.models.generate_content(
-                    model=model_name,
-                    contents=prompt,
-                    config={
-                        "system_instruction": system,
-                        "max_output_tokens": max_tokens,
-                        "temperature": temperature
-                    }
-                )
-                if response.text:
-                    return True, response.text
-                else:
-                    last_error = "AI khong tra loi."
-            except Exception as e:
-                err_str = str(e)
-                last_error = err_str
-                # Neu loi 503 (qua tai) -> thu model khac
-                if "503" in err_str or "UNAVAILABLE" in err_str:
-                    break
-                # Neu loi khac -> thu lai 1 lan
-                if attempt == 0:
-                    time.sleep(1)
-                    continue
-                break
+            if r.status_code == 200 and "choices" in data:
+                return True, data["choices"][0]["message"]["content"]
+            else:
+                err = data.get("error", {}).get("message", "Loi API")
+                last_error = err
+                continue
+        except Exception as e:
+            last_error = str(e)
+            continue
     return False, last_error
 
 
@@ -187,36 +179,21 @@ def api_chat():
         conn.close()
 
         history = list(reversed(rows))
-
-        history_text = ""
-        for role, content in history[:-1]:
-            if role == "user":
-                history_text += "User: " + content + chr(10)
-            else:
-                history_text += "Assistant: " + content + chr(10)
-
-        full_prompt = history_text + "User: " + msg + chr(10) + "Assistant:"
+        messages = []
+        for role, content in history:
+            messages.append({"role": role, "content": content})
 
         temperature = 0.9 if mode == "max" else 0.7
-        ok, result = call_gemini(full_prompt, cfg["system"], cfg["max_tokens"], temperature)
+        ok, result = call_groq(messages, cfg["system"], cfg["max_tokens"], temperature)
 
         if not ok:
-            # Don dep thong bao loi cho than thien
-            if "503" in result or "UNAVAILABLE" in result:
-                return jsonify({"ok": False, "error": "AI dang qua tai. Vui long thu lai sau 10 giay."})
-            elif "API_KEY" in result or "401" in result or "403" in result:
-                return jsonify({"ok": False, "error": "Key API khong hop le hoac het han."})
-            elif "quota" in result.lower() or "429" in result:
-                return jsonify({"ok": False, "error": "Het luot mien phi hom nay. Thu lai ngay mai."})
-            else:
-                return jsonify({"ok": False, "error": "Loi AI: " + result[:200]})
+            return jsonify({"ok": False, "error": "Loi AI: " + result[:200]})
 
         reply = result
 
         conn = sqlite3.connect(DB_PATH)
         conn.execute("INSERT INTO chats (user_id, role, content, created_at) VALUES (?, 'assistant', ?, ?)",
                      (uid, reply, datetime.utcnow().isoformat()))
-        conn.execute("UPDATE users SET msg_count = msg_count + 1 WHERE id = ?", (uid,))
         conn.commit()
         conn.close()
 
